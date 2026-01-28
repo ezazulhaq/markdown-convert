@@ -5,12 +5,11 @@ from pathlib import Path
 from typing import Optional
 
 from ..config import ConverterConfig
-from ..exceptions import PDFNotFoundError
 from ..utils import get_output_path, ensure_directory, should_skip_conversion
 
 
 class BaseConverter(ABC):
-    """Abstract base class for PDF to Markdown converters.
+    """Abstract base class for file to Markdown converters.
     
     This class defines the interface that all converters must implement
     and provides common functionality for validation and file handling.
@@ -24,26 +23,26 @@ class BaseConverter(ABC):
         """
         self.config = config or ConverterConfig.default()
     
-    def convert(self, pdf_path: Path) -> Optional[Path]:
-        """Convert a PDF file to Markdown.
+    def convert(self, file_path: Path) -> Optional[Path]:
+        """Convert a file to Markdown.
         
         Args:
-            pdf_path: Path to the PDF file to convert.
+            file_path: Path to the file to convert.
             
         Returns:
             Path to the output markdown file if successful, None if skipped.
             
         Raises:
-            PDFNotFoundError: If the PDF file doesn't exist.
+            FileNotFoundError: If the file doesn't exist.
             ConversionError: If conversion fails.
         """
         # Validate input
-        pdf_path = Path(pdf_path)
-        if not pdf_path.exists():
-            raise PDFNotFoundError(str(pdf_path))
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise FileNotFoundError(str(file_path))
         
         # Determine output path
-        output_path = get_output_path(pdf_path, self.config.output_dir)
+        output_path = get_output_path(file_path, self.config.output_dir)
         
         # Check if we should skip
         if should_skip_conversion(output_path, self.config.skip_existing):
@@ -55,7 +54,7 @@ class BaseConverter(ABC):
         ensure_directory(output_path.parent)
         
         # Perform the actual conversion (implemented by subclasses)
-        markdown_text = self._convert_to_markdown(pdf_path)
+        markdown_text = self._convert_to_markdown(file_path)
         
         # Save the result
         if markdown_text:
@@ -67,14 +66,14 @@ class BaseConverter(ABC):
             return None
     
     @abstractmethod
-    def _convert_to_markdown(self, pdf_path: Path) -> str:
-        """Convert PDF to markdown text.
+    def _convert_to_markdown(self, file_path: Path) -> str:
+        """Convert file to markdown text.
         
         This method must be implemented by subclasses to perform
         the actual conversion logic.
         
         Args:
-            pdf_path: Path to the PDF file.
+            file_path: Path to the file.
             
         Returns:
             Markdown text content.
@@ -85,13 +84,13 @@ class BaseConverter(ABC):
         pass
     
     @abstractmethod
-    def can_convert(self, pdf_path: Path) -> bool:
-        """Check if this converter can handle the given PDF.
+    def can_convert(self, file_path: Path) -> bool:
+        """Check if this converter can handle the given file.
         
         Args:
-            pdf_path: Path to the PDF file.
+            file_path: Path to the file.
             
         Returns:
-            True if this converter can handle the PDF, False otherwise.
+            True if this converter can handle the file, False otherwise.
         """
         pass

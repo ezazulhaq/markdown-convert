@@ -17,6 +17,12 @@ class TestCLIParser:
         parser = create_parser()
         args = parser.parse_args(['test.pdf'])
         assert args.input == ['test.pdf']
+
+    def test_parser_accepts_docx_file(self):
+        """Test parser accepts docx file argument."""
+        parser = create_parser()
+        args = parser.parse_args(['test.docx'])
+        assert args.input == ['test.docx']
     
     def test_parser_accepts_multiple_files(self):
         """Test parser accepts multiple file arguments."""
@@ -58,16 +64,16 @@ class TestCLIParser:
 class TestCLIMain:
     """Tests for CLI main function."""
     
-    @patch('markdown_convert.cli.find_pdf_files')
+    @patch('markdown_convert.cli.find_supported_files')
     def test_main_returns_error_when_no_files_found(self, mock_find):
-        """Test main returns error code when no PDF files found."""
+        """Test main returns error code when no supported files found."""
         mock_find.return_value = []
         
         exit_code = main(['test.pdf'])
         assert exit_code == 1
     
     @patch('markdown_convert.cli.process_files')
-    @patch('markdown_convert.cli.find_pdf_files')
+    @patch('markdown_convert.cli.find_supported_files')
     def test_main_returns_success_when_files_processed(self, mock_find, mock_process):
         """Test main returns success code when files are processed."""
         mock_find.return_value = [Path('test.pdf')]
@@ -77,7 +83,7 @@ class TestCLIMain:
         assert exit_code == 0
     
     @patch('markdown_convert.cli.process_files')
-    @patch('markdown_convert.cli.find_pdf_files')
+    @patch('markdown_convert.cli.find_supported_files')
     def test_main_returns_error_when_no_files_successful(self, mock_find, mock_process):
         """Test main returns error code when no files are successfully processed."""
         mock_find.return_value = [Path('test.pdf')]

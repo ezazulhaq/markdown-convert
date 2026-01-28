@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from .config import ConverterConfig
 from .converters import ConverterFactory
-from .utils import find_pdf_files
+from .utils import find_supported_files
 from .exceptions import MarkdownConvertError
 
 
@@ -20,34 +20,35 @@ def create_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog='smart-file2md',
-        description='Convert PDF files to Markdown with OCR support',
+        description='Convert PDF, Docx, and Doc files to Markdown with OCR support',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Convert a single PDF file
-  markdown-convert document.pdf
+  # Convert a single file (PDF, Docx, Doc)
+  smart-file2md document.pdf
+  smart-file2md document.docx
   
-  # Convert multiple PDF files
-  markdown-convert file1.pdf file2.pdf file3.pdf
+  # Convert multiple files
+  smart-file2md file1.pdf file2.docx
   
-  # Convert all PDFs in a directory
-  markdown-convert /path/to/pdfs/
+  # Convert all supported files in a directory
+  smart-file2md /path/to/files/
   
   # Convert with custom output directory
-  markdown-convert document.pdf -o output/
+  smart-file2md document.pdf -o output/
   
-  # Force OCR for all files
-  markdown-convert document.pdf --force-ocr
+  # Force OCR for all PDF files
+  smart-file2md document.pdf --force-ocr
   
-  # Process only first 10 pages
-  markdown-convert document.pdf --max-pages 10
+  # Process only first 10 pages (PDF only)
+  smart-file2md document.pdf --max-pages 10
         """
     )
     
     parser.add_argument(
         'input',
         nargs='+',
-        help='Input PDF file(s) or directory'
+        help='Input file(s) or directory (PDF, Docx, Doc)'
     )
     
     parser.add_argument(
@@ -65,7 +66,7 @@ Examples:
     parser.add_argument(
         '--force-ocr',
         action='store_true',
-        help='Force using OCR even if text can be extracted directly'
+        help='Force using OCR even if text can be extracted directly (PDF only)'
     )
     
     parser.add_argument(
@@ -89,28 +90,28 @@ Examples:
     return parser
 
 
-def process_files(pdf_files: List[Path], config: ConverterConfig) -> tuple[int, int]:
-    """Process a list of PDF files.
+def process_files(files: List[Path], config: ConverterConfig) -> tuple[int, int]:
+    """Process a list of files.
     
     Args:
-        pdf_files: List of PDF file paths to process.
+        files: List of file paths to process.
         config: Converter configuration.
         
     Returns:
         Tuple of (successful_count, total_count).
     """
     successful = 0
-    total = len(pdf_files)
+    total = len(files)
     
-    for i, pdf_path in enumerate(pdf_files, 1):
-        print(f"\n[{i}/{total}] Processing: {pdf_path}")
+    for i, file_path in enumerate(files, 1):
+        print(f"\n[{i}/{total}] Processing: {file_path}")
         
         try:
             # Create appropriate converter
-            converter = ConverterFactory.create(pdf_path, config)
+            converter = ConverterFactory.create(file_path, config)
             
             # Convert the file
-            result = converter.convert(pdf_path)
+            result = converter.convert(file_path)
             
             if result:
                 successful += 1
@@ -136,14 +137,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
     
     try:
-        # Find all PDF files
-        pdf_files = find_pdf_files(args.input, recursive=args.recursive)
+        # Find all supported files
+        files = find_supported_files(args.input, recursive=args.recursive)
         
-        if not pdf_files:
-            print("No PDF files found!")
+        if not files:
+            print("No supported files found (PDF, Docx)!")
             return 1
         
-        print(f"Found {len(pdf_files)} PDF file(s) to process")
+        print(f"Found {len(files)} file(s) to process")
         
         # Create configuration
         config = ConverterConfig(
@@ -155,7 +156,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         
         # Process files
         start_time = time.time()
-        successful, total = process_files(pdf_files, config)
+        successful, total = process_files(files, config)
         elapsed_time = time.time() - start_time
         
         # Print summary

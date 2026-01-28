@@ -10,7 +10,7 @@ from markdown_convert.converters import (
     OCRConverter,
     ConverterFactory,
 )
-from markdown_convert.exceptions import PDFNotFoundError, ConversionError
+from markdown_convert.exceptions import ConversionError
 
 
 class TestPDFConverter:
@@ -72,11 +72,17 @@ class TestOCRConverter:
         assert converter.config is not None
         assert isinstance(converter.config, ConverterConfig)
     
-    def test_can_convert_always_returns_true(self):
-        """Test can_convert always returns True for OCR."""
+    def test_can_convert_returns_true_for_pdf(self):
+        """Test can_convert returns True for PDF files."""
         converter = OCRConverter()
         result = converter.can_convert(Path("any.pdf"))
         assert result is True
+
+    def test_can_convert_returns_false_for_non_pdf(self):
+        """Test can_convert returns False for non-PDF files."""
+        converter = OCRConverter()
+        result = converter.can_convert(Path("any.docx"))
+        assert result is False
     
     def test_init_with_custom_config(self):
         """Test OCRConverter initialization with custom config."""
@@ -126,8 +132,8 @@ class TestBaseConverter:
     """Tests for base converter functionality."""
     
     def test_convert_raises_error_for_nonexistent_file(self):
-        """Test convert raises PDFNotFoundError for non-existent files."""
+        """Test convert raises FileNotFoundError for non-existent files."""
         converter = PDFConverter()
         
-        with pytest.raises(PDFNotFoundError):
+        with pytest.raises(FileNotFoundError):
             converter.convert(Path("/nonexistent/file.pdf"))

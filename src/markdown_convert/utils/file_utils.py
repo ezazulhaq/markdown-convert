@@ -6,57 +6,65 @@ from pathlib import Path
 from typing import List, Optional
 
 
-def find_pdf_files(paths: List[str], recursive: bool = False) -> List[Path]:
-    """Find all PDF files from given paths.
+def find_supported_files(paths: List[str], recursive: bool = False) -> List[Path]:
+    """Find all supported files from given paths.
+
+    Supported extensions: .pdf, .docx, .doc
     
     Args:
         paths: List of file paths, directory paths, or glob patterns.
         recursive: If True, search directories recursively.
         
     Returns:
-        List of Path objects for found PDF files, sorted and deduplicated.
+        List of Path objects for found files, sorted and deduplicated.
     """
-    pdf_files = []
+    found_files = []
+    extensions = {'.pdf', '.docx', '.doc'}
     
     for path_str in paths:
         path = Path(path_str)
         
         if path.is_dir():
-            # Directory: find all PDFs
+            # Directory: find all supported files
             if recursive:
-                pdf_files.extend(path.rglob('*.pdf'))
+                for ext in extensions:
+                    found_files.extend(path.rglob(f'*{ext}'))
             else:
-                pdf_files.extend(path.glob('*.pdf'))
-        elif path.is_file() and path.suffix.lower() == '.pdf':
-            # Direct PDF file
-            pdf_files.append(path)
+                for ext in extensions:
+                    found_files.extend(path.glob(f'*{ext}'))
+        elif path.is_file() and path.suffix.lower() in extensions:
+            # Direct supported file
+            found_files.append(path)
         elif '*' in path_str or '?' in path_str:
             # Glob pattern
-            pdf_files.extend(Path(p) for p in glob.glob(path_str))
+            for p in glob.glob(path_str):
+                p_path = Path(p)
+                if p_path.suffix.lower() in extensions:
+                    found_files.append(p_path)
     
     # Remove duplicates and sort
-    return sorted(set(pdf_files))
+    return sorted(set(found_files))
 
 
-def get_output_path(pdf_path: Path, output_dir: Optional[Path] = None) -> Path:
+def get_output_path(input_path: Path, output_dir: Optional[Path] = None) -> Path:
     """Determine the output path for a converted markdown file.
     
     Args:
-        pdf_path: Path to the input PDF file.
+        input_path: Path to the input file.
         output_dir: Optional output directory. If None, creates 'markdown'
-                   directory next to the PDF.
+                   directory next to the input file.
                    
     Returns:
         Path object for the output markdown file.
     """
     # Get base filename without extension
-    md_filename = pdf_path.stem + '.md'
+    md_filename = input_path.stem + '.md'
     
     if output_dir:
         return output_dir / md_filename
     else:
-        # Create markdown directory next to PDF
-        markdown_dir = pdf_path.parent / 'markdown'
+        # Create markdown directory next to input file
+        markdown_dir = input_path.parent / 'markdown'
         return markdown_dir / md_filename
 
 

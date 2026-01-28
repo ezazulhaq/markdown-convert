@@ -34,7 +34,8 @@ dependencies = [
     "pymupdf4llm>=0.0.10",
     "pytesseract>=0.3.10",
     "Pillow>=9.0.0",
-    "fitz>=0.0.1.dev2",
+    "mammoth>=1.8.0",
+    "markdownify>=0.11.0",
 ]
 
 [project.optional-dependencies]

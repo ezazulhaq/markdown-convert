@@ -28,22 +28,23 @@ class OCRConverter(BaseConverter):
         """
         super().__init__(config)
     
-    def can_convert(self, pdf_path: Path) -> bool:
+    def can_convert(self, file_path: Path) -> bool:
         """OCR can convert any PDF.
         
         Args:
-            pdf_path: Path to the PDF file.
+            file_path: Path to the PDF file.
             
         Returns:
-            Always True, as OCR can process any PDF.
+            True if file is a PDF, False otherwise.
         """
-        return True
+        # OCR is only implemented for PDFs currently
+        return file_path.suffix.lower() == '.pdf'
     
-    def _convert_to_markdown(self, pdf_path: Path) -> str:
+    def _convert_to_markdown(self, file_path: Path) -> str:
         """Convert PDF to markdown using OCR.
         
         Args:
-            pdf_path: Path to the PDF file.
+            file_path: Path to the PDF file.
             
         Returns:
             Markdown text content.
@@ -52,10 +53,10 @@ class OCRConverter(BaseConverter):
             ConversionError: If conversion fails.
         """
         try:
-            print(f"Processing: {pdf_path}")
+            print(f"Processing: {file_path}")
             print("Using OCR method...")
             
-            doc = fitz.open(pdf_path)
+            doc = fitz.open(file_path)
             
             # Determine number of pages to process
             total_pages = len(doc)
@@ -97,7 +98,7 @@ class OCRConverter(BaseConverter):
                         print(f"Processed page {page_num + 1}/{num_pages}")
                         
                 except Exception as e:
-                    raise OCRError(str(pdf_path), page_num + 1, str(e))
+                    raise OCRError(str(file_path), page_num + 1, str(e))
             
             doc.close()
             
@@ -109,6 +110,6 @@ class OCRConverter(BaseConverter):
             raise
         except Exception as e:
             raise ConversionError(
-                str(pdf_path),
+                str(file_path),
                 f"OCR processing failed: {str(e)}"
             )

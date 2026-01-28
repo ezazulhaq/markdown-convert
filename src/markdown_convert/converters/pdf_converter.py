@@ -26,17 +26,20 @@ class PDFConverter(BaseConverter):
         """
         super().__init__(config)
     
-    def can_convert(self, pdf_path: Path) -> bool:
+    def can_convert(self, file_path: Path) -> bool:
         """Check if PDF contains extractable text.
         
         Args:
-            pdf_path: Path to the PDF file.
+            file_path: Path to the PDF file.
             
         Returns:
             True if PDF contains text, False otherwise.
         """
         try:
-            doc = fitz.open(pdf_path)
+            if file_path.suffix.lower() != '.pdf':
+                return False
+
+            doc = fitz.open(file_path)
             # Check first page for text
             if len(doc) > 0:
                 text = doc[0].get_text()
@@ -47,11 +50,11 @@ class PDFConverter(BaseConverter):
         except Exception:
             return False
     
-    def _convert_to_markdown(self, pdf_path: Path) -> str:
+    def _convert_to_markdown(self, file_path: Path) -> str:
         """Convert PDF to markdown using text extraction.
         
         Args:
-            pdf_path: Path to the PDF file.
+            file_path: Path to the PDF file.
             
         Returns:
             Markdown text content.
@@ -60,17 +63,17 @@ class PDFConverter(BaseConverter):
             ConversionError: If conversion fails.
         """
         try:
-            print(f"Processing: {pdf_path}")
+            print(f"Processing: {file_path}")
             print("Using text extraction method...")
             
             # Use pymupdf4llm for conversion
-            md_text = pymupdf4llm.to_markdown(str(pdf_path))
+            md_text = pymupdf4llm.to_markdown(str(file_path))
             
             print(f"Extracted {len(md_text)} characters")
             return md_text
             
         except Exception as e:
             raise ConversionError(
-                str(pdf_path),
+                str(file_path),
                 f"Text extraction failed: {str(e)}"
             )
