@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import pymupdf4llm
-import fitz
+import pymupdf as fitz
 
 from .base import BaseConverter
 from ..config import ConverterConfig

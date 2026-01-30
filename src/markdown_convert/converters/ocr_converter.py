@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Optional
 
-import fitz
+import pymupdf as fitz
 import pytesseract
 from PIL import Image
 
