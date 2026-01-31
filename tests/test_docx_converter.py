@@ -74,3 +74,44 @@ class TestDocxConverter:
                 with pytest.raises(ConversionError) as exc:
                     converter._convert_to_markdown(Path("test.doc"))
                 assert "Legacy binary .doc files are not supported" in str(exc.value)
+
+    @patch("mammoth.convert_to_html")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_convert_strips_images(self, mock_file, mock_mammoth, converter):
+        # Setup mocks with HTML containing images
+        mock_result = Mock()
+        mock_result.value = '<h1>Title</h1><p>Text</p><img src="data:image/jpeg;base64,/9j/4AAQSkZJRg..." /><p>More text</p>'
+        mock_result.messages = []
+        mock_mammoth.return_value = mock_result
+
+        # Test
+        result = converter._convert_to_markdown(Path("test.docx"))
+
+        # Verify images are stripped
+        assert "# Title" in result
+        assert "Text" in result
+        assert "More text" in result
+        assert "data:image" not in result
+        assert "![" not in result  # No markdown images
+
+    @patch("pytesseract.image_to_string")
+    @patch("mammoth.convert_to_html")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_convert_uses_ocr_when_no_text(self, mock_file, mock_mammoth, mock_ocr, converter):
+        # Setup mocks with HTML containing only images (no text)
+        mock_result = Mock()
+        mock_result.value = '<img src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" />'
+        mock_result.messages = []
+        mock_mammoth.return_value = mock_result
+        
+        # Mock OCR output
+        mock_ocr.return_value = "Text extracted from image via OCR"
+        
+        # Test
+        result = converter._convert_to_markdown(Path("scanned.docx"))
+        
+        # Verify OCR was called
+        assert mock_ocr.called
+        assert "Text extracted from image via OCR" in result
+        assert "# Image 1" in result
+
