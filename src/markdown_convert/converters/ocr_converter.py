@@ -70,13 +70,15 @@ class OCRConverter(BaseConverter):
             
             markdown_parts = []
             
+            # Instantiate matrix once outside the loop for performance
+            matrix = fitz.Matrix(self.config.ocr_dpi, self.config.ocr_dpi)
+
             for page_num in range(num_pages):
                 try:
                     # Get the page
                     page = doc[page_num]
                     
                     # Render page to image with configured DPI
-                    matrix = fitz.Matrix(self.config.ocr_dpi, self.config.ocr_dpi)
                     pix = page.get_pixmap(matrix=matrix)
                     
                     # Convert to PIL Image
