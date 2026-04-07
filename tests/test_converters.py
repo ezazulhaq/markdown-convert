@@ -44,8 +44,42 @@ class TestPDFConverter:
         result = converter.can_convert(Path("test.pdf"))
         
         assert result is True
-        mock_doc.close.assert_called_once()
+        # Document should NOT be closed, it should be cached
+        mock_doc.close.assert_not_called()
+        assert converter._cached_doc == mock_doc
     
+    @patch('markdown_convert.converters.pdf_converter.fitz.open')
+    def test_convert_closes_cached_doc(self, mock_fitz_open):
+        """Test convert method closes the cached document after conversion."""
+        mock_doc = MagicMock()
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = "Sample text content"
+        mock_doc.__len__.return_value = 1
+        mock_doc.__getitem__.return_value = mock_page
+        mock_fitz_open.return_value = mock_doc
+
+        converter = PDFConverter()
+        path = Path("test.pdf")
+
+        # We need to mock Path.exists because convert() checks it
+        with patch.object(Path, "exists", return_value=True):
+            # Mock pymupdf4llm.to_markdown to avoid actual call
+            with patch('markdown_convert.converters.pdf_converter.pymupdf4llm.to_markdown', return_value="# MD"):
+                # Mock get_output_path and ensure_directory from BaseConverter
+                with patch('markdown_convert.converters.base.get_output_path', return_value=Path("out.md")):
+                    with patch('markdown_convert.converters.base.ensure_directory'):
+                        # Mock Path.write_text
+                        with patch.object(Path, "write_text"):
+                            # can_convert will cache doc
+                            converter.can_convert(path)
+                            assert converter._cached_doc == mock_doc
+
+                            # convert will use it and close it
+                            converter.convert(path)
+
+        mock_doc.close.assert_called_once()
+        assert converter._cached_doc is None
+
     @patch('markdown_convert.converters.pdf_converter.fitz.open')
     def test_can_convert_returns_false_for_scanned_pdf(self, mock_fitz_open):
         """Test can_convert returns False for PDFs without text."""
