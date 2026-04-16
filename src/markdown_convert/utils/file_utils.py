@@ -26,16 +26,11 @@ def find_supported_files(paths: List[str], recursive: bool = False) -> List[Path
         
         if path.is_dir():
             # Directory: find all supported files
-            if recursive:
-                # One pass for all extensions
-                for p in path.rglob('*'):
-                    if p.suffix.lower() in extensions:
-                        found_files.append(p)
-            else:
-                # One pass for all extensions
-                for p in path.glob('*'):
-                    if p.suffix.lower() in extensions:
-                        found_files.append(p)
+            # Optimized: single traversal instead of repeated globbing for each extension
+            search_pattern = '**/*' if recursive else '*'
+            for p in path.glob(search_pattern):
+                if p.suffix.lower() in extensions:
+                    found_files.append(p)
         elif path.is_file() and path.suffix.lower() in extensions:
             # Direct supported file
             found_files.append(path)
