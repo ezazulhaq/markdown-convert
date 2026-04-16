@@ -119,6 +119,7 @@ class DocxConverter(BaseConverter):
 
         print(f"Found {num_images} image(s), processing with OCR...")
         ocr_parts = []
+        ocr_cache = {}
 
         # Process matches to extract text from images
         for idx, match in enumerate(matches):
@@ -126,12 +127,17 @@ class DocxConverter(BaseConverter):
                 # Extract base64 data lazily
                 base64_data = match.group(1)
 
-                # Decode base64 image
-                img_bytes = base64.b64decode(base64_data)
-                img = Image.open(BytesIO(img_bytes))
+                # Use cached OCR result if available for identical images
+                if base64_data in ocr_cache:
+                    ocr_text = ocr_cache[base64_data]
+                else:
+                    # Decode base64 image
+                    img_bytes = base64.b64decode(base64_data)
+                    img = Image.open(BytesIO(img_bytes))
 
-                # Run OCR
-                ocr_text = pytesseract.image_to_string(img)
+                    # Run OCR
+                    ocr_text = pytesseract.image_to_string(img)
+                    ocr_cache[base64_data] = ocr_text
 
                 # Add to results if text was found
                 if ocr_text.strip():
