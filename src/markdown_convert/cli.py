@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from .config import ConverterConfig
 from .converters import ConverterFactory
-from .utils import find_supported_files
+from .utils import find_supported_files, get_output_path, should_skip_conversion
 from .exceptions import MarkdownConvertError
 
 
@@ -109,6 +109,14 @@ def process_files(files: List[Path], config: ConverterConfig) -> dict:
         print(f"\n[{i}/{total}] Processing: {file_path}")
         
         try:
+            # Determine output path and check if we should skip
+            output_path = get_output_path(file_path, config.output_dir)
+            if should_skip_conversion(output_path, config.skip_existing):
+                print(f"Output file already exists: {output_path}")
+                print("Skipping conversion (use overwrite option to force)")
+                skipped += 1
+                continue
+
             # Create appropriate converter
             converter = ConverterFactory.create(file_path, config)
             
@@ -118,6 +126,7 @@ def process_files(files: List[Path], config: ConverterConfig) -> dict:
             if result:
                 converted += 1
             else:
+                # This case might happen if _convert_to_markdown returns None
                 skipped += 1
                 
         except MarkdownConvertError as e:
