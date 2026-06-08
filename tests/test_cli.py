@@ -77,7 +77,12 @@ class TestCLIMain:
     def test_main_returns_success_when_files_processed(self, mock_find, mock_process):
         """Test main returns success code when files are processed."""
         mock_find.return_value = [Path('test.pdf')]
-        mock_process.return_value = (1, 1)  # 1 successful, 1 total
+        mock_process.return_value = {
+            'converted': 1,
+            'skipped': 0,
+            'failed': 0,
+            'total': 1
+        }
         
         exit_code = main(['test.pdf'])
         assert exit_code == 0
@@ -87,7 +92,12 @@ class TestCLIMain:
     def test_main_returns_error_when_no_files_successful(self, mock_find, mock_process):
         """Test main returns error code when no files are successfully processed."""
         mock_find.return_value = [Path('test.pdf')]
-        mock_process.return_value = (0, 1)  # 0 successful, 1 total
+        mock_process.return_value = {
+            'converted': 0,
+            'skipped': 0,
+            'failed': 1,
+            'total': 1
+        }
         
         exit_code = main(['test.pdf'])
         assert exit_code == 1
@@ -107,7 +117,7 @@ class TestProcessFiles:
         config = ConverterConfig()
         pdf_files = [Path('test.pdf')]
         
-        successful, total = process_files(pdf_files, config)
+        results = process_files(pdf_files, config)
         
-        assert successful == 0
-        assert total == 1
+        assert results['converted'] == 0
+        assert results['total'] == 1

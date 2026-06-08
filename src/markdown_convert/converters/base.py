@@ -44,12 +44,6 @@ class BaseConverter(ABC):
         # Determine output path
         output_path = get_output_path(file_path, self.config.output_dir)
         
-        # Check if we should skip
-        if should_skip_conversion(output_path, self.config.skip_existing):
-            print(f"Output file already exists: {output_path}")
-            print("Skipping conversion (use overwrite option to force)")
-            return None
-        
         # Ensure output directory exists
         ensure_directory(output_path.parent)
         
