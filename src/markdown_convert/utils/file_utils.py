@@ -27,10 +27,24 @@ def find_supported_files(paths: List[str], recursive: bool = False) -> List[Path
         if path.is_dir():
             # Directory: find all supported files
             # Optimized: single traversal instead of repeated globbing for each extension
-            search_pattern = '**/*' if recursive else '*'
-            for p in path.glob(search_pattern):
-                if p.suffix.lower() in extensions:
-                    found_files.append(p)
+            # Also skips common ignore directories to improve performance
+            ignore_dirs = {'.git', '__pycache__', 'node_modules', 'venv', '.venv'}
+            if recursive:
+                for root, dirs, files in os.walk(path):
+                    # Filter out ignored directories in-place
+                    dirs[:] = [d for d in dirs if d not in ignore_dirs]
+                    for file in files:
+                        p = Path(root) / file
+                        if p.suffix.lower() in extensions:
+                            found_files.append(p)
+            else:
+                # Use scandir for better performance on non-recursive directory listing
+                with os.scandir(path) as it:
+                    for entry in it:
+                        if entry.is_file():
+                            p = Path(entry.path)
+                            if p.suffix.lower() in extensions:
+                                found_files.append(p)
         elif path.is_file() and path.suffix.lower() in extensions:
             # Direct supported file
             found_files.append(path)
